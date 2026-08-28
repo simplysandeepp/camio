@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/";
+  // Only allow same-origin relative paths (a single leading slash, not "//").
+  const rawNext = params.get("next") || "/";
+  const next = /^\/(?!\/)/.test(rawNext) ? rawNext : "/";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

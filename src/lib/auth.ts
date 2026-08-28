@@ -2,7 +2,8 @@
  * Camio authentication.
  *
  * - Passwords are hashed with scrypt (Node's built-in crypto — no native deps).
- *   Format: `scrypt$<saltHex>$<hashHex>`. Verified with a timing-safe compare.
+ *   Format: `scrypt:<saltHex>:<hashHex>` (see src/lib/password.ts). Verified
+ *   with a timing-safe compare.
  * - Sessions are signed JWTs (HS256 via `jose`, which works in both the Node
  *   route handlers and the Edge middleware).
  *
