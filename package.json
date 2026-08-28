@@ -4,12 +4,12 @@
   "private": true,
   "description": "Self-hosted, login-protected security camera web app.",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "node scripts/start.mjs",
     "lint": "next lint",
     "camera": "node scripts/camera.mjs",
-    "camera:setup": "node scripts/setup-mediamtx.mjs",
+    "camera:setup": "node scripts/setup-mediamtx.mjs && node scripts/setup-ffmpeg.mjs",
     "camera:list": "node scripts/list-cameras.mjs",
     "auth:setup": "node scripts/hash-password.mjs"
   },
