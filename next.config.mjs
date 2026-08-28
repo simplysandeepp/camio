@@ -6,6 +6,17 @@ const nextConfig = {
   // Camio is meant to run on a home machine, not a CDN. Keep it lean.
   poweredByHeader: false,
 
+  // Dev server only: without this, Next 15 flags requests to /_next/* assets
+  // as cross-origin when the dev server is reached via a LAN/Tailscale IP
+  // instead of localhost (exactly Camio's case), and will start blocking
+  // them outright in a future major version. Set DEV_ALLOWED_ORIGINS to a
+  // comma-separated list of the host/IP(s) you use to reach `npm run dev`
+  // (e.g. your Tailscale IP) — see .env.example.
+  allowedDevOrigins: (process.env.DEV_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((h) => h.trim())
+    .filter(Boolean),
+
   async headers() {
     return [
       {
