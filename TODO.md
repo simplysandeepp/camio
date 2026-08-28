@@ -18,11 +18,11 @@ Status legend: ⬜ todo · 🟡 in progress · ✅ done
 - [ ] Base layout, minimal styling, `/api/health` route
 - [ ] Config module that reads env and derives the ffmpeg input per-OS
 
-## Step 2 — Camera pipeline  (branch `feat/camera`)
-- [ ] Bundle / document MediaMTX
-- [ ] `mediamtx.yml` publishing a `cam` path as WebRTC (WHEP) + HLS
-- [ ] Cross-platform launcher: `avfoundation` on Mac, `v4l2` on Linux
-- [ ] `npm run camera` script; verify stream locally
+## Step 2 — Camera pipeline  (branch `feat/camera`) ✅
+- [x] MediaMTX downloader (`npm run camera:setup`)
+- [x] Generated MediaMTX config publishing `cam` as WebRTC (WHEP) + HLS
+- [x] Cross-platform launcher: `avfoundation` on Mac, `v4l2` on Linux
+- [x] `npm run camera` + `npm run camera:list`; MediaMTX boot/ports verified
 
 ## Step 3 — Authentication  (branch `feat/auth`)
 - [ ] Login page (user ID + password)
