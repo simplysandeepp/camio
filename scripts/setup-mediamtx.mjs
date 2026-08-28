@@ -26,8 +26,7 @@ function targetTriple() {
   const arch = archMap[process.arch];
   if (!os || !arch) {
     throw new Error(
-      `Unsupported platform ${process.platform}/${process.arch}. ` +
-        `Download MediaMTX manually from https://github.com/bluenviron/mediamtx/releases into ./bin/mediamtx`
+      `Unsupported platform ${process.platform}/${process.arch}. Download MediaMTX manually from https://github.com/bluenviron/mediamtx/releases into ./bin/mediamtx`
     );
   }
   return { os, arch };
@@ -59,8 +58,7 @@ async function main() {
   );
   if (!asset) {
     throw new Error(
-      `No asset matching *${wantSuffix} in release ${rel.tag_name}. ` +
-        `Check https://github.com/bluenviron/mediamtx/releases`
+      `No asset matching *${wantSuffix} in release ${rel.tag_name}. Check https://github.com/bluenviron/mediamtx/releases`
     );
   }
 

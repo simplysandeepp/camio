@@ -48,11 +48,10 @@ function preflightOrExit(mediamtxPresent, ffmpegPresent) {
   const problems = [];
   if (!ffmpegPresent) {
     problems.push(
-      "ffmpeg not found.\n" +
-        (cfg.source === "linux"
+      `ffmpeg not found.\n${cfg.source === "linux"
           ? "    Install:  sudo apt update && sudo apt install -y ffmpeg\n" +
             "    (or run:  npm run camera:setup)"
-          : "    Install:  npm run camera:setup   (fetches ffmpeg into ./bin)")
+          : "    Install:  npm run camera:setup   (fetches ffmpeg into ./bin)"}`
     );
   }
   if (!mediamtxPresent) {
@@ -60,7 +59,7 @@ function preflightOrExit(mediamtxPresent, ffmpegPresent) {
   }
   if (problems.length) {
     console.error("\n✖ Camio camera pipeline can't start:\n");
-    for (const p of problems) console.error("  • " + p + "\n");
+    for (const p of problems) console.error(`  • ${p}\n`);
     process.exit(1);
   }
 }
@@ -122,7 +121,7 @@ async function main() {
     rtspPublishUrl(cfg),
   ];
 
-  console.log("• Starting ffmpeg capture → " + rtspPublishUrl(cfg));
+  console.log(`• Starting ffmpeg capture → ${rtspPublishUrl(cfg)}`);
   if (cfg.source === "mac") {
     console.log("  (macOS may prompt for camera permission the first time.)");
   }

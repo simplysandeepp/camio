@@ -170,7 +170,6 @@ function waitForIceGathering(pc: RTCPeerConnection): Promise<void> {
   if (pc.iceGatheringState === "complete") return Promise.resolve();
   return new Promise((resolve) => {
     let settled = false;
-    let timer: ReturnType<typeof setTimeout>;
     const done = () => {
       if (settled) return;
       settled = true;
@@ -183,6 +182,6 @@ function waitForIceGathering(pc: RTCPeerConnection): Promise<void> {
     };
     pc.addEventListener("icegatheringstatechange", check);
     // Safety timeout — don't wait forever for a stray candidate.
-    timer = setTimeout(done, 1500);
+    const timer = setTimeout(done, 1500);
   });
 }
