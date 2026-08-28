@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Self-hosted, login-protected security camera web app.",
+  "description": "Self-hosted multi-camera, multi-user security camera app — Next.js + MediaMTX + ffmpeg, WebRTC/HLS streaming behind auth, deployed over Tailscale.",
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
