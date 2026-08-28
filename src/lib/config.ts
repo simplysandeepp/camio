@@ -28,6 +28,8 @@ export const config = {
     rtsp: Number(env("RTSP_PORT", "8554")),
     webrtc: Number(env("WEBRTC_PORT", "8889")),
     hls: Number(env("HLS_PORT", "8888")),
+    // MediaMTX control API (localhost only) — camera status/uptime.
+    api: Number(env("MEDIAMTX_API_PORT", "9997")),
   },
 
   streamName: env("STREAM_NAME", "cam"),
