@@ -10,6 +10,10 @@ any machine with a webcam into a private live-streaming camera reachable over
 a WireGuard-based mesh (Tailscale) — no cloud hosting, no public ports, no
 recurring cost.
 
+> [!TIP]
+> **Want to just install and run it without using the terminal?**
+> 👉 **[Download the Camio Desktop Installer (Linux & macOS)](https://github.com/simplysandeepp/camio-desktop/releases/latest)**
+
 ```
 camera(s) ──ffmpeg──▶ MediaMTX ──▶ WebRTC (WHEP) + HLS
                                          │
