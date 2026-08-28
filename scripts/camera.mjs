@@ -20,6 +20,7 @@ import {
   ffmpegInputArgs,
   rtspPublishUrl,
   renderMediamtxConfig,
+  ffmpegBin,
 } from "./lib/config.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -34,6 +35,7 @@ try {
 }
 
 const cfg = readConfig();
+const FFMPEG = ffmpegBin();
 
 function has(cmd) {
   return spawnSync(cmd, ["-version"], { stdio: "ignore" }).status === 0;
@@ -48,8 +50,9 @@ function preflightOrExit(mediamtxPresent, ffmpegPresent) {
     problems.push(
       "ffmpeg not found.\n" +
         (cfg.source === "linux"
-          ? "    Install:  sudo apt update && sudo apt install -y ffmpeg"
-          : "    Install:  brew install ffmpeg")
+          ? "    Install:  sudo apt update && sudo apt install -y ffmpeg\n" +
+            "    (or run:  npm run camera:setup)"
+          : "    Install:  npm run camera:setup   (fetches ffmpeg into ./bin)")
     );
   }
   if (!mediamtxPresent) {
@@ -79,7 +82,7 @@ process.on("SIGTERM", () => shutdown(0));
 
 async function main() {
   const mediamtxPresent = await exists(MEDIAMTX);
-  const ffmpegPresent = has("ffmpeg");
+  const ffmpegPresent = has(FFMPEG);
   preflightOrExit(mediamtxPresent, ffmpegPresent);
 
   await writeFile(GENERATED_YML, renderMediamtxConfig(cfg), "utf8");
@@ -123,7 +126,7 @@ async function main() {
   if (cfg.source === "mac") {
     console.log("  (macOS may prompt for camera permission the first time.)");
   }
-  const ff = spawn("ffmpeg", ffArgs, { stdio: "inherit" });
+  const ff = spawn(FFMPEG, ffArgs, { stdio: "inherit" });
   children.push(ff);
   ff.on("exit", (code) => {
     if (!shuttingDown) {

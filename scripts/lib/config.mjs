@@ -6,10 +6,32 @@
  * Keep the two in sync — they intentionally share variable names and defaults.
  */
 
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const PKG_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  ".."
+);
+
 function env(name, fallback) {
   const v = process.env[name];
   return v === undefined || v === "" ? fallback : v;
 }
+
+/**
+ * ffmpeg to use: a project-local ./bin/ffmpeg if present (so nothing needs to
+ * be installed system-wide), otherwise whatever `ffmpeg` is on PATH.
+ */
+export function ffmpegBin() {
+  const name = process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
+  const local = path.join(PKG_ROOT, "bin", name);
+  return existsSync(local) ? local : "ffmpeg";
+}
+
+export { PKG_ROOT };
 
 export function readConfig() {
   const source = env("CAMERA_SOURCE", "mac");
