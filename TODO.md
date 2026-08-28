@@ -24,12 +24,13 @@ Status legend: ⬜ todo · 🟡 in progress · ✅ done
 - [x] Cross-platform launcher: `avfoundation` on Mac, `v4l2` on Linux
 - [x] `npm run camera` + `npm run camera:list`; MediaMTX boot/ports verified
 
-## Step 3 — Authentication  (branch `feat/auth`)
-- [ ] Login page (user ID + password)
-- [ ] Credentials hashed (bcrypt) from env; no plaintext secrets in code
-- [ ] Signed JWT session cookie (httpOnly, secure)
-- [ ] Middleware: every route except `/login` requires a valid session
-- [ ] Login rate-limiting
+## Step 3 — Authentication  (branch `feat/auth`) ✅
+- [x] Login page (user ID + password)
+- [x] Credentials hashed (scrypt, no native dep) from env; no plaintext in code
+- [x] Signed JWT session cookie (httpOnly, sameSite, secure-optional)
+- [x] Middleware: every route except `/login`, `/api/auth/login`, `/api/health`
+- [x] Login rate-limiting (per-IP, in-memory)
+- [x] `npm run auth:setup` credential generator
 
 ## Step 4 — Live dashboard + player  (branch `feat/dashboard`)
 - [ ] WebRTC (WHEP) player, real-time

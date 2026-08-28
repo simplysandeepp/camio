@@ -10,9 +10,11 @@
     "lint": "next lint",
     "camera": "node scripts/camera.mjs",
     "camera:setup": "node scripts/setup-mediamtx.mjs",
-    "camera:list": "node scripts/list-cameras.mjs"
+    "camera:list": "node scripts/list-cameras.mjs",
+    "auth:setup": "node scripts/hash-password.mjs"
   },
   "dependencies": {
+    "jose": "^5.10.0",
     "next": "15.5.24",
     "react": "19.1.0",
     "react-dom": "19.1.0"
