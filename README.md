@@ -43,26 +43,24 @@ npm run camera
 npm run dev
 ```
 
-Open http://localhost:3000 and log in. Full walkthrough + Android testing:
-[`docs/TESTING.md`](./docs/TESTING.md).
+Open http://localhost:3000 and log in.
 
 ## Production (Ubuntu, 24/7)
 
-Pull the repo, set `CAMERA_SOURCE=linux`, install `ffmpeg` + Tailscale, then run
-`sudo bash deploy/systemd/install.sh` to enable the `systemd` services (auto-start
-on boot, restart on crash). Full step-by-step:
-[`docs/DEPLOY-UBUNTU.md`](./docs/DEPLOY-UBUNTU.md).
+Pull the repo, set `CAMERA_SOURCE=linux` and your `/dev/videoN` in `.env.local`,
+install `ffmpeg` + Tailscale, then run `sudo bash deploy/systemd/install.sh` to
+enable the `systemd` services (auto-start on boot, restart on crash). Watch from
+your phone (with Tailscale) at `http://<machine-name>:3000`.
 
-## Docs
-- [`docs/CAMERA.md`](./docs/CAMERA.md) — the camera pipeline
-- [`docs/SECURITY.md`](./docs/SECURITY.md) — the two-layer security model
-- [`docs/DEPLOY-UBUNTU.md`](./docs/DEPLOY-UBUNTU.md) — production deploy
-- [`docs/TESTING.md`](./docs/TESTING.md) — Mac + Android testing
-
-## Roadmap
-
-See [`TODO.md`](./TODO.md) for the full step-by-step build plan. Each step is
-built on its own branch, opened as a PR against `main`, and merged.
+## npm scripts
+| Script | What it does |
+|--------|--------------|
+| `npm run camera:setup` | Download the MediaMTX media server into `./bin` |
+| `npm run camera:list` | List camera devices (to set `CAMERA_DEVICE`) |
+| `npm run camera` | Start the camera pipeline (MediaMTX + ffmpeg) |
+| `npm run auth:setup` | Generate your password hash + session secret |
+| `npm run dev` | Camio web app (development) |
+| `npm run build` / `npm start` | Build / run the app (production) |
 
 ## Safety note
 
