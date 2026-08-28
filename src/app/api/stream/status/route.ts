@@ -1,15 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { mediamtxApiBase } from "@/lib/stream";
+import { hasSession } from "@/lib/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
  * Reports whether the camera is actually publishing, by asking the MediaMTX
- * control API (localhost). Guarded by middleware (requires a session).
+ * control API (localhost). Requires a session (middleware + this route).
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await hasSession(req))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const url = `${mediamtxApiBase()}/v3/paths/get/${config.streamName}`;
 
   try {
