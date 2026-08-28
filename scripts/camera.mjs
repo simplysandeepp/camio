@@ -1,14 +1,18 @@
 /**
  * Camio camera pipeline launcher.
  *
- *   camera ──ffmpeg──► MediaMTX ──► WebRTC (real-time) + HLS (fallback)
+ *   camera(s) ──ffmpeg──► MediaMTX ──► WebRTC (real-time) + HLS (fallback)
  *
- * Starts MediaMTX (the media server) and then ffmpeg (which captures the local
- * camera and publishes it to MediaMTX over RTSP). Works on macOS (avfoundation)
- * and Ubuntu (v4l2) purely from env — see .env.local / .env.example.
+ * Starts MediaMTX (the media server) and then one ffmpeg process per configured
+ * camera (see CAMERAS in .env.local; defaults to a single camera). Works on
+ * macOS (avfoundation) and Ubuntu (v4l2) purely from env.
  *
- *   npm run camera:setup   # once: download the MediaMTX binary
+ *   npm run camera:setup   # once: download MediaMTX + ffmpeg
  *   npm run camera         # start the pipeline
+ *
+ * Each camera's ffmpeg is supervised independently with backoff — one flaky
+ * USB camera restarts on its own without taking the others down. Only MediaMTX
+ * dying brings down the whole pipeline (there's nothing to serve without it).
  */
 
 import { spawn, spawnSync } from "node:child_process";
@@ -37,6 +41,9 @@ try {
 const cfg = readConfig();
 const FFMPEG = ffmpegBin();
 
+const MAX_RESTARTS = 5;
+const RESTART_WINDOW_MS = 60_000;
+
 function has(cmd) {
   return spawnSync(cmd, ["-version"], { stdio: "ignore" }).status === 0;
 }
@@ -64,20 +71,75 @@ function preflightOrExit(mediamtxPresent, ffmpegPresent) {
   }
 }
 
-const children = [];
 let shuttingDown = false;
+let mtxProc = null;
+const ffState = new Map(); // cameraId -> { proc, restarts, windowStart, timer }
 
 function shutdown(code = 0) {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log("\n• Shutting down camera pipeline …");
-  for (const c of children) {
-    try { c.kill("SIGTERM"); } catch { /* already gone */ }
+  for (const state of ffState.values()) {
+    if (state.timer) clearTimeout(state.timer);
+    try { state.proc?.kill("SIGTERM"); } catch { /* already gone */ }
   }
+  try { mtxProc?.kill("SIGTERM"); } catch { /* already gone */ }
   setTimeout(() => process.exit(code), 500);
 }
 process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
+
+function spawnFfmpegFor(camera) {
+  const state = ffState.get(camera.id) ?? { restarts: 0, windowStart: Date.now() };
+  ffState.set(camera.id, state);
+
+  const publishUrl = rtspPublishUrl(cfg, camera.id);
+  const ffArgs = [
+    "-hide_banner",
+    "-loglevel", "warning",
+    ...ffmpegInputArgs({
+      source: cfg.source,
+      device: camera.device,
+      resolution: camera.resolution,
+      fps: camera.fps,
+    }),
+    // Encode to H.264 for WebRTC/HLS; tuned for low latency + steady 24/7 use.
+    "-c:v", "libx264",
+    "-preset", "veryfast",
+    "-tune", "zerolatency",
+    "-pix_fmt", "yuv420p",
+    "-g", String(Number(camera.fps) * 2),
+    "-f", "rtsp",
+    "-rtsp_transport", "tcp",
+    publishUrl,
+  ];
+
+  console.log(`• [${camera.id}] starting ffmpeg capture → ${publishUrl}`);
+  const proc = spawn(FFMPEG, ffArgs, { stdio: "inherit" });
+  state.proc = proc;
+
+  proc.on("exit", (code) => {
+    if (shuttingDown) return;
+    console.error(`✖ [${camera.id}] ffmpeg exited (code ${code}).`);
+
+    const now = Date.now();
+    if (now - state.windowStart > RESTART_WINDOW_MS) {
+      state.restarts = 0;
+      state.windowStart = now;
+    }
+    state.restarts += 1;
+
+    if (state.restarts > MAX_RESTARTS) {
+      console.error(
+        `✖ [${camera.id}] crashed ${state.restarts} times in the last minute — giving up on this camera. Check its device/permission. Other cameras keep running.`
+      );
+      return;
+    }
+    const delay = Math.min(1000 * 2 ** (state.restarts - 1), 15_000);
+    console.error(`  [${camera.id}] restarting in ${Math.round(delay / 1000)}s…`);
+    state.timer = setTimeout(() => spawnFfmpegFor(camera), delay);
+  });
+}
 
 async function main() {
   const mediamtxPresent = await exists(MEDIAMTX);
@@ -87,16 +149,17 @@ async function main() {
   await writeFile(GENERATED_YML, renderMediamtxConfig(cfg), "utf8");
 
   console.log("📹 Camio camera pipeline");
-  console.log(`   source     : ${cfg.source}  (device ${cfg.device})`);
-  console.log(`   capture    : ${cfg.resolution} @ ${cfg.fps}fps`);
-  console.log(`   WebRTC     : http://localhost:${cfg.ports.webrtc}/${cfg.streamName}`);
-  console.log(`   HLS        : http://localhost:${cfg.ports.hls}/${cfg.streamName}/index.m3u8`);
+  console.log(`   source     : ${cfg.source}`);
+  for (const cam of cfg.cameras) {
+    console.log(`   camera "${cam.id}" (${cam.label}) — device ${cam.device}, ${cam.resolution}@${cam.fps}fps`);
+    console.log(`     WebRTC   : http://localhost:${cfg.ports.webrtc}/${cam.id}`);
+    console.log(`     HLS      : http://localhost:${cfg.ports.hls}/${cam.id}/index.m3u8`);
+  }
   console.log("");
 
   // 1) MediaMTX
-  const mtx = spawn(MEDIAMTX, [GENERATED_YML], { stdio: "inherit" });
-  children.push(mtx);
-  mtx.on("exit", (code) => {
+  mtxProc = spawn(MEDIAMTX, [GENERATED_YML], { stdio: "inherit" });
+  mtxProc.on("exit", (code) => {
     if (!shuttingDown) {
       console.error(`✖ MediaMTX exited (code ${code}).`);
       shutdown(1);
@@ -106,33 +169,12 @@ async function main() {
   // 2) ffmpeg — give MediaMTX a moment to bind its RTSP port first.
   await new Promise((r) => setTimeout(r, 1200));
 
-  const ffArgs = [
-    "-hide_banner",
-    "-loglevel", "warning",
-    ...ffmpegInputArgs(cfg),
-    // Encode to H.264 for WebRTC/HLS; tuned for low latency + steady 24/7 use.
-    "-c:v", "libx264",
-    "-preset", "veryfast",
-    "-tune", "zerolatency",
-    "-pix_fmt", "yuv420p",
-    "-g", String(Number(cfg.fps) * 2),
-    "-f", "rtsp",
-    "-rtsp_transport", "tcp",
-    rtspPublishUrl(cfg),
-  ];
-
-  console.log(`• Starting ffmpeg capture → ${rtspPublishUrl(cfg)}`);
   if (cfg.source === "mac") {
     console.log("  (macOS may prompt for camera permission the first time.)");
   }
-  const ff = spawn(FFMPEG, ffArgs, { stdio: "inherit" });
-  children.push(ff);
-  ff.on("exit", (code) => {
-    if (!shuttingDown) {
-      console.error(`✖ ffmpeg exited (code ${code}). Check the camera device/permission.`);
-      shutdown(1);
-    }
-  });
+  for (const cam of cfg.cameras) {
+    spawnFfmpegFor(cam);
+  }
 
   console.log("\n✔ Pipeline running. Press Ctrl+C to stop.\n");
 }
