@@ -24,7 +24,7 @@ function askHidden(question) {
     // Mask input.
     const onData = () => {
       // Move cursor back and clear typed chars visually.
-      rl.line && stdout.write("\r" + question + "*".repeat(rl.line.length) + " ");
+      rl.line && stdout.write(`\r${question}${"*".repeat(rl.line.length)} `);
     };
     process.stdin.on("data", onData);
     rl.question(question, (answer) => {

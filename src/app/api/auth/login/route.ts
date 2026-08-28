@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   // Rate-limit key = account (not spoofable). Add the IP only when trusted, so
   // distinct real clients get their own budget without opening a bypass.
   const ip = trustedClientIp(req);
-  const rateKey = `u:${username.toLowerCase()}` + (ip ? `|ip:${ip}` : "");
+  const rateKey = `u:${username.toLowerCase()}${ip ? `|ip:${ip}` : ""}`;
 
   const rate = checkLoginRate(rateKey);
   if (!rate.allowed) {
