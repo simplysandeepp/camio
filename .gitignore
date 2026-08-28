@@ -22,6 +22,10 @@ next-env.d.ts
 auto.crt
 auto.key
 
+# internal / personal notes — kept local only, not published to the public repo
+/TODO.md
+/docs/
+
 # misc
 .DS_Store
 *.pem
