@@ -8,17 +8,20 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { ffmpegBin } from "./lib/config.mjs";
+
+const FFMPEG = ffmpegBin();
 
 function haveFfmpeg() {
-  return spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0;
+  return spawnSync(FFMPEG, ["-version"], { stdio: "ignore" }).status === 0;
 }
 
 if (!haveFfmpeg()) {
-  console.error("✖ ffmpeg not found. Install it first:");
+  console.error("✖ ffmpeg not found. Get it with:");
   console.error(
     process.platform === "linux"
-      ? "    sudo apt update && sudo apt install -y ffmpeg"
-      : "    brew install ffmpeg"
+      ? "    sudo apt update && sudo apt install -y ffmpeg   (or: npm run camera:setup)"
+      : "    npm run camera:setup   (fetches ffmpeg into ./bin)"
   );
   process.exit(1);
 }
@@ -27,7 +30,7 @@ if (process.platform === "darwin") {
   console.log("• macOS camera/AV devices (use the [N] index as CAMERA_DEVICE):\n");
   // ffmpeg prints the device list to stderr and exits non-zero by design.
   const r = spawnSync(
-    "ffmpeg",
+    FFMPEG,
     ["-hide_banner", "-f", "avfoundation", "-list_devices", "true", "-i", ""],
     { encoding: "utf8" }
   );
