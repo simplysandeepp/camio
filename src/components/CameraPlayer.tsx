@@ -22,11 +22,27 @@ export default function CameraPlayer({ whep, hls }: Props) {
     let pc: RTCPeerConnection | null = null;
     let hlsInstance: { destroy: () => void } | null = null;
     let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    // Effect-scoped guards (NOT React state, which is frozen in this closure).
+    let webrtcConnected = false;
+    let fellBack = false;
+
+    function clearFallbackTimer() {
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    }
 
     async function startHls() {
       if (cancelled) return;
       const video = videoRef.current;
       if (!video) return;
+
+      // Tear down any prior hls.js instance before creating a new one.
+      if (hlsInstance) {
+        try { hlsInstance.destroy(); } catch { /* ignore */ }
+        hlsInstance = null;
+      }
 
       // Safari / iOS can play HLS natively.
       if (video.canPlayType("application/vnd.apple.mpegurl")) {
@@ -71,23 +87,23 @@ export default function CameraPlayer({ whep, hls }: Props) {
 
       pc.ontrack = (ev) => {
         if (cancelled) return;
+        webrtcConnected = true;
+        clearFallbackTimer();
         video.srcObject = ev.streams[0];
         video.play().catch(() => {});
-        if (fallbackTimer) clearTimeout(fallbackTimer);
         setState("webrtc");
       };
 
       pc.onconnectionstatechange = () => {
-        if (!pc) return;
-        if (pc.connectionState === "failed" && !cancelled) {
-          triggerFallback();
-        }
+        if (!pc || cancelled) return;
+        if (pc.connectionState === "failed") triggerFallback();
       };
 
       try {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         await waitForIceGathering(pc);
+        if (cancelled) return;
 
         const res = await fetch(whep, {
           method: "POST",
@@ -103,8 +119,11 @@ export default function CameraPlayer({ whep, hls }: Props) {
       }
     }
 
+    // Idempotent: only ever falls back once, and never after WebRTC connected.
     function triggerFallback() {
-      if (cancelled) return;
+      if (cancelled || fellBack || webrtcConnected) return;
+      fellBack = true;
+      clearFallbackTimer();
       if (pc) {
         try { pc.close(); } catch { /* ignore */ }
         pc = null;
@@ -114,16 +133,16 @@ export default function CameraPlayer({ whep, hls }: Props) {
 
     // If WebRTC hasn't produced video in 6s, fall back to HLS.
     fallbackTimer = setTimeout(() => {
-      if (!cancelled && state === "connecting") triggerFallback();
+      if (!webrtcConnected) triggerFallback();
     }, 6000);
 
     startWebRtc();
 
     return () => {
       cancelled = true;
-      if (fallbackTimer) clearTimeout(fallbackTimer);
+      clearFallbackTimer();
       if (pc) { try { pc.close(); } catch { /* ignore */ } }
-      if (hlsInstance) hlsInstance.destroy();
+      if (hlsInstance) { try { hlsInstance.destroy(); } catch { /* ignore */ } }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [whep, hls]);
@@ -150,7 +169,12 @@ function PlayerBadge({ state }: { state: PlayState }) {
 function waitForIceGathering(pc: RTCPeerConnection): Promise<void> {
   if (pc.iceGatheringState === "complete") return Promise.resolve();
   return new Promise((resolve) => {
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout>;
     const done = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       pc.removeEventListener("icegatheringstatechange", check);
       resolve();
     };
@@ -159,6 +183,6 @@ function waitForIceGathering(pc: RTCPeerConnection): Promise<void> {
     };
     pc.addEventListener("icegatheringstatechange", check);
     // Safety timeout — don't wait forever for a stray candidate.
-    setTimeout(done, 1500);
+    timer = setTimeout(done, 1500);
   });
 }

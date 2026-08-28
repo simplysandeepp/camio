@@ -40,12 +40,17 @@ export async function POST(req: NextRequest) {
 
   const expectedUser = process.env.CAMIO_USER ?? "admin";
   const storedHash = process.env.CAMIO_PASSWORD_HASH;
+  const sessionSecret = process.env.SESSION_SECRET;
 
-  if (!storedHash) {
-    return NextResponse.json(
-      { error: "Server not configured. Run `npm run auth:setup`." },
-      { status: 500 }
+  // Server misconfiguration: log the specifics, return a generic message so we
+  // don't disclose config state to unauthenticated callers.
+  if (!storedHash || !sessionSecret || sessionSecret.length < 16) {
+    console.error(
+      "[camio] auth not configured:",
+      !storedHash ? "CAMIO_PASSWORD_HASH missing" : "SESSION_SECRET missing/short",
+      "— run `npm run auth:setup`"
     );
+    return NextResponse.json({ error: "Server error." }, { status: 500 });
   }
 
   const userOk = username === expectedUser;
@@ -57,8 +62,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  let token: string;
+  try {
+    token = await createSessionToken(expectedUser);
+  } catch (err) {
+    console.error("[camio] failed to create session token:", err);
+    return NextResponse.json({ error: "Server error." }, { status: 500 });
+  }
+
   resetLoginRate(ip);
-  const token = await createSessionToken(expectedUser);
 
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, token, {

@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { upstreamHlsUrl } from "@/lib/stream";
+import { config } from "@/lib/config";
+import { hasSession } from "@/lib/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// Only allow HLS artifacts for the configured stream: <stream>/<name>.(m3u8|ts|mp4).
+function allowedHlsPath(segments: string[]): boolean {
+  if (segments.length < 2) return false;
+  if (segments[0] !== config.streamName) return false;
+  if (segments.some((s) => s.includes("..") || s.includes("/") || s.includes("\\"))) {
+    return false;
+  }
+  const last = segments[segments.length - 1];
+  return /\.(m3u8|ts|mp4|m4s)$/i.test(last);
+}
 
 /**
  * Auth-guarded HLS proxy.
@@ -16,8 +29,17 @@ export async function GET(
   req: NextRequest,
   ctx: { params: Promise<{ path: string[] }> }
 ) {
+  if (!(await hasSession(req))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { path } = await ctx.params;
-  const sub = (path ?? []).join("/");
+  const segments = path ?? [];
+  if (!allowedHlsPath(segments)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const sub = segments.join("/");
   const qs = req.nextUrl.search; // preserve MediaMTX query params on segments
   const target = upstreamHlsUrl(sub) + qs;
 
