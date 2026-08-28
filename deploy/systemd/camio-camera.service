@@ -1,0 +1,17 @@
+[Unit]
+Description=Camio camera pipeline (MediaMTX + ffmpeg)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__CAMIO_DIR__
+ExecStart=__NODE__ scripts/camera.mjs
+Restart=always
+RestartSec=3
+# Give the camera device time to appear after boot / re-plug.
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

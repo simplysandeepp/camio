@@ -1,0 +1,17 @@
+[Unit]
+Description=Camio web app (Next.js)
+After=network-online.target camio-camera.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__CAMIO_DIR__
+Environment=NODE_ENV=production
+ExecStart=__NODE__ scripts/start.mjs
+Restart=always
+RestartSec=3
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

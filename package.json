@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/start.mjs",
     "lint": "next lint",
     "camera": "node scripts/camera.mjs",
     "camera:setup": "node scripts/setup-mediamtx.mjs",
