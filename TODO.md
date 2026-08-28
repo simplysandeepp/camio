@@ -38,9 +38,12 @@ Status legend: ⬜ todo · 🟡 in progress · ✅ done
 - [x] Camera status (real, via MediaMTX localhost API), uptime, viewers, live badge
 - [x] Logout
 
-## Step 5 — Stream guard  (branch `feat/stream-guard`)
-- [ ] Proxy/guard WebRTC + HLS endpoints behind the session
-- [ ] Raw stream URLs unreachable without logging in
+## Step 5 — Stream guard  (branch `feat/stream-guard`) ✅
+- [x] MediaMTX bound to 127.0.0.1 (lockdown, opt-out for tailnet WebRTC)
+- [x] Auth-guarded HLS proxy (`/api/stream/hls/*`) — full playlist+segment chain
+- [x] Auth-guarded WHEP signaling proxy (`/api/stream/whep`)
+- [x] Player uses same-origin proxied paths; raw ports unreachable off-box
+- [x] `docs/SECURITY.md`
 
 ## Step 6 — 24/7 run assets + deploy docs  (branch `feat/run247`)
 - [ ] `systemd` units (camera, app) with `Restart=always`, start-on-boot

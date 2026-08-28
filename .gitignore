@@ -14,10 +14,8 @@ next-env.d.ts
 .env.local
 .env*.local
 
-# camera / media server binaries & runtime artifacts
-/bin/mediamtx
-/bin/mediamtx.exe
-/bin/mediamtx.generated.yml
+# camera / media server binaries & runtime artifacts (all downloaded)
+/bin/
 *.log
 /recordings/
 # MediaMTX MoQ auto-generated certs (MoQ is disabled, but be defensive)
