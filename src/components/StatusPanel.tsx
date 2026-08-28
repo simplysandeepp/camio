@@ -20,14 +20,14 @@ function fmtUptime(sec: number): string {
   return `${s}s`;
 }
 
-export default function StatusPanel() {
+export default function StatusPanel({ url }: { url: string }) {
   const [status, setStatus] = useState<Status | null>(null);
 
   useEffect(() => {
     let alive = true;
     async function poll() {
       try {
-        const res = await fetch("/api/stream/status", { cache: "no-store" });
+        const res = await fetch(url, { cache: "no-store" });
         const data = await res.json();
         if (alive) setStatus(data);
       } catch {
@@ -40,7 +40,7 @@ export default function StatusPanel() {
       alive = false;
       clearInterval(id);
     };
-  }, []);
+  }, [url]);
 
   const online = status?.online ?? false;
 

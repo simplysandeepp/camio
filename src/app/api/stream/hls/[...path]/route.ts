@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { upstreamHlsUrl } from "@/lib/stream";
-import { config } from "@/lib/config";
+import { getCamera } from "@/lib/config";
 import { hasSession } from "@/lib/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Only allow HLS artifacts for the configured stream: <stream>/<name>.(m3u8|ts|mp4).
+// Only allow HLS artifacts for a configured camera: <cameraId>/<name>.(m3u8|ts|mp4).
 function allowedHlsPath(segments: string[]): boolean {
   if (segments.length < 2) return false;
-  if (segments[0] !== config.streamName) return false;
+  if (!getCamera(segments[0])) return false;
   if (segments.some((s) => s.includes("..") || s.includes("/") || s.includes("\\"))) {
     return false;
   }

@@ -33,23 +33,84 @@ export function ffmpegBin() {
 
 export { PKG_ROOT };
 
+function singleDefaultCamera(defaults) {
+  return [
+    {
+      id: defaults.streamName,
+      label: defaults.streamName,
+      device: defaults.device,
+      resolution: defaults.resolution,
+      fps: defaults.fps,
+    },
+  ];
+}
+
+/**
+ * Resolve the list of cameras to run.
+ *
+ * CAMERAS env (optional): JSON array of { id, label?, device?, resolution?, fps? }.
+ * Any field omitted on an entry falls back to the global CAMERA_ / STREAM_NAME
+ * defaults. If CAMERAS is unset (or invalid), a single camera is synthesized
+ * from those defaults — existing single-camera .env.local files are unaffected.
+ */
+function resolveCameras(defaults) {
+  const raw = process.env.CAMERAS;
+  if (!raw) return singleDefaultCamera(defaults);
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    console.error(`[camio] CAMERAS is not valid JSON (${err.message}); using a single default camera.`);
+    return singleDefaultCamera(defaults);
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    console.error("[camio] CAMERAS must be a non-empty JSON array; using a single default camera.");
+    return singleDefaultCamera(defaults);
+  }
+
+  const seen = new Set();
+  return parsed.map((c, i) => {
+    const id = String(c.id ?? `cam${i}`);
+    if (seen.has(id)) {
+      throw new Error(`[camio] duplicate camera id "${id}" in CAMERAS`);
+    }
+    seen.add(id);
+    return {
+      id,
+      label: String(c.label ?? id),
+      device: String(c.device ?? defaults.device),
+      resolution: String(c.resolution ?? defaults.resolution),
+      fps: String(c.fps ?? defaults.fps),
+    };
+  });
+}
+
 export function readConfig() {
   const source = env("CAMERA_SOURCE", "mac");
-  return {
-    source,
+  const defaults = {
+    streamName: env("STREAM_NAME", "cam"),
     device: env("CAMERA_DEVICE", source === "linux" ? "/dev/video0" : "0"),
     resolution: env("CAMERA_RESOLUTION", "1280x720"),
     fps: env("CAMERA_FPS", "25"),
+  };
+  const cameras = resolveCameras(defaults);
+
+  return {
+    source,
+    cameras,
+    // Back-compat single-camera fields — always the first/default camera.
+    streamName: cameras[0].id,
+    device: cameras[0].device,
+    resolution: cameras[0].resolution,
+    fps: cameras[0].fps,
     ports: {
       app: Number(env("APP_PORT", "3000")),
       rtsp: Number(env("RTSP_PORT", "8554")),
       webrtc: Number(env("WEBRTC_PORT", "8889")),
       hls: Number(env("HLS_PORT", "8888")),
-      // MediaMTX control API — bound to localhost only, used by the app to
-      // report camera online/offline + uptime.
       api: Number(env("MEDIAMTX_API_PORT", "9997")),
     },
-    streamName: env("STREAM_NAME", "cam"),
     // Comma-separated extra hosts advertised in WebRTC ICE candidates.
     // On Ubuntu behind Tailscale, set this to the machine's 100.x.x.x address.
     webrtcAdditionalHosts: env("WEBRTC_ADDITIONAL_HOSTS", ""),
@@ -60,10 +121,13 @@ export function readConfig() {
   };
 }
 
-/** ffmpeg input argv for capturing the local camera on this OS. */
-export function ffmpegInputArgs(cfg) {
-  const { device, resolution, fps } = cfg;
-  if (cfg.source === "linux") {
+/**
+ * ffmpeg input argv for capturing a local camera on this OS. `cam` is a
+ * camera-like object: { source, device, resolution, fps }.
+ */
+export function ffmpegInputArgs(cam) {
+  const { device, resolution, fps } = cam;
+  if (cam.source === "linux") {
     return [
       "-f", "v4l2",
       "-framerate", fps,
@@ -80,11 +144,12 @@ export function ffmpegInputArgs(cfg) {
   ];
 }
 
-export function rtspPublishUrl(cfg) {
-  return `rtsp://localhost:${cfg.ports.rtsp}/${cfg.streamName}`;
+/** The RTSP URL ffmpeg publishes to (MediaMTX ingests here) for a given camera. */
+export function rtspPublishUrl(cfg, cameraId = cfg.streamName) {
+  return `rtsp://localhost:${cfg.ports.rtsp}/${cameraId}`;
 }
 
-/** Render a MediaMTX YAML config from our env-driven ports/stream. */
+/** Render a MediaMTX YAML config — one `paths:` entry per configured camera. */
 export function renderMediamtxConfig(cfg) {
   const extraHosts = cfg.webrtcAdditionalHosts
     .split(",")
@@ -125,6 +190,13 @@ export function renderMediamtxConfig(cfg) {
   if (extraHosts.length) {
     lines.push(`webrtcAdditionalHosts: [${extraHosts.join(", ")}]`);
   }
-  lines.push("", "paths:", `  ${cfg.streamName}:`, "    source: publisher", "");
+
+  lines.push("", "paths:");
+  const cameras = cfg.cameras?.length ? cfg.cameras : [{ id: cfg.streamName }];
+  for (const cam of cameras) {
+    lines.push(`  ${cam.id}:`, "    source: publisher");
+  }
+  lines.push("");
+
   return lines.join("\n");
 }
