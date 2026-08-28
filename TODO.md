@@ -32,11 +32,11 @@ Status legend: ⬜ todo · 🟡 in progress · ✅ done
 - [x] Login rate-limiting (per-IP, in-memory)
 - [x] `npm run auth:setup` credential generator
 
-## Step 4 — Live dashboard + player  (branch `feat/dashboard`)
-- [ ] WebRTC (WHEP) player, real-time
-- [ ] Automatic HLS fallback (hls.js)
-- [ ] Camera status, uptime, connection indicator
-- [ ] Logout
+## Step 4 — Live dashboard + player  (branch `feat/dashboard`) ✅
+- [x] WebRTC (WHEP) player, real-time
+- [x] Automatic HLS fallback (hls.js) with 6s timeout
+- [x] Camera status (real, via MediaMTX localhost API), uptime, viewers, live badge
+- [x] Logout
 
 ## Step 5 — Stream guard  (branch `feat/stream-guard`)
 - [ ] Proxy/guard WebRTC + HLS endpoints behind the session
