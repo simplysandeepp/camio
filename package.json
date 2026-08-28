@@ -2,6 +2,7 @@
   "name": "camio",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "Self-hosted, login-protected security camera web app.",
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
