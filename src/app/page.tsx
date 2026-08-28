@@ -1,4 +1,4 @@
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 import { streamUrls } from "@/lib/stream";
 import CameraPlayer from "@/components/CameraPlayer";
@@ -11,8 +11,7 @@ export default async function Dashboard() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = await verifySessionToken(token);
 
-  const host = (await headers()).get("host") ?? "localhost";
-  const urls = streamUrls(host);
+  const urls = streamUrls();
 
   return (
     <main className="dashboard">
