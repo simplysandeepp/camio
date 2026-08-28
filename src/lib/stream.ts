@@ -1,42 +1,42 @@
 /**
- * Builds the browser-facing stream URLs.
+ * Stream URLs.
  *
- * The web app is served on APP_PORT, but the video is served by MediaMTX on its
- * own WebRTC/HLS ports. Given the host the browser used to reach us, we point it
- * at the same host on those media ports.
- *
- * (Step 5 will move these behind same-origin, auth-guarded proxy paths.)
+ * Browser-facing URLs are **same-origin proxy paths** on the Camio app, so the
+ * video is only reachable through the authenticated session — the raw MediaMTX
+ * ports stay bound to localhost. Upstream URLs (localhost MediaMTX) are used
+ * server-side by the proxy routes.
  */
 
 import { config } from "@/lib/config";
 
-/** Strip any port from a Host header value, keeping IPv6 brackets intact. */
-function hostname(hostHeader: string): string {
-  const h = hostHeader.trim();
-  if (h.startsWith("[")) {
-    // IPv6 literal like [::1]:3000
-    return h.slice(0, h.indexOf("]") + 1);
-  }
-  const colon = h.lastIndexOf(":");
-  return colon === -1 ? h : h.slice(0, colon);
-}
-
+/** What the browser/player uses — all behind the app's auth middleware. */
 export interface StreamUrls {
-  whep: string; // WebRTC (WHEP) endpoint
-  hls: string; // HLS playlist
+  whep: string; // POST SDP here (proxied to MediaMTX WHEP)
+  hls: string; // HLS playlist (proxied)
 }
 
-export function streamUrls(hostHeader: string): StreamUrls {
-  const host = hostname(hostHeader || "localhost");
-  const { webrtc, hls } = config.ports;
+export function streamUrls(): StreamUrls {
   const name = config.streamName;
   return {
-    whep: `http://${host}:${webrtc}/${name}/whep`,
-    hls: `http://${host}:${hls}/${name}/index.m3u8`,
+    whep: `/api/stream/whep`,
+    hls: `/api/stream/hls/${name}/index.m3u8`,
   };
 }
 
-/** MediaMTX control API base — always localhost, server-side only. */
+const LOCAL = "127.0.0.1";
+
+/** MediaMTX WHEP endpoint on localhost (server-side proxy target). */
+export function upstreamWhepUrl(): string {
+  return `http://${LOCAL}:${config.ports.webrtc}/${config.streamName}/whep`;
+}
+
+/** MediaMTX HLS URL on localhost for a given sub-path (server-side proxy). */
+export function upstreamHlsUrl(subPath: string): string {
+  const clean = subPath.replace(/^\/+/, "");
+  return `http://${LOCAL}:${config.ports.hls}/${clean}`;
+}
+
+/** MediaMTX control API base — localhost, server-side only. */
 export function mediamtxApiBase(): string {
-  return `http://127.0.0.1:${config.ports.api}`;
+  return `http://${LOCAL}:${config.ports.api}`;
 }
