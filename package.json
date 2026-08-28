@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "camera": "node scripts/camera.mjs"
+    "camera": "node scripts/camera.mjs",
+    "camera:setup": "node scripts/setup-mediamtx.mjs",
+    "camera:list": "node scripts/list-cameras.mjs"
   },
   "dependencies": {
     "next": "15.5.24",
