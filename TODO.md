@@ -45,11 +45,12 @@ Status legend: ⬜ todo · 🟡 in progress · ✅ done
 - [x] Player uses same-origin proxied paths; raw ports unreachable off-box
 - [x] `docs/SECURITY.md`
 
-## Step 6 — 24/7 run assets + deploy docs  (branch `feat/run247`)
-- [ ] `systemd` units (camera, app) with `Restart=always`, start-on-boot
-- [ ] Mac dev scripts
-- [ ] `docs/DEPLOY-UBUNTU.md`: install list, env, Tailscale, systemd enable
-- [ ] `docs/TESTING.md`: Mac camera + Android-over-mobile-data test
+## Step 6 — 24/7 run assets + deploy docs  (branch `feat/run247`) ✅
+- [x] `systemd` units (camera, app) with `Restart=always`, start-on-boot
+- [x] `deploy/systemd/install.sh` templating installer
+- [x] `scripts/start.mjs` prod wrapper (binds APP_PORT on 0.0.0.0)
+- [x] `docs/DEPLOY-UBUNTU.md`: install list, env, Tailscale, systemd enable
+- [x] `docs/TESTING.md`: Mac camera + Android-over-mobile-data test
 
 ---
 
