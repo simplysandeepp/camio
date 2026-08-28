@@ -30,18 +30,34 @@ login page is a second lock on top.
 
 ```bash
 npm install
-cp .env.example .env.local   # then edit credentials
-npm run camera               # starts the camera pipeline (MediaMTX + ffmpeg)
-npm run dev                  # starts the Camio web app
+npm run camera:setup         # downloads the MediaMTX media server into ./bin
+brew install ffmpeg          # if not already installed
+
+cp .env.example .env.local
+npm run auth:setup           # generates your password hash + session secret
+# paste those two lines into .env.local
+
+# Terminal 1 — the camera pipeline (MediaMTX + ffmpeg)
+npm run camera
+# Terminal 2 — the Camio web app
+npm run dev
 ```
 
-Open http://localhost:3000 and log in.
+Open http://localhost:3000 and log in. Full walkthrough + Android testing:
+[`docs/TESTING.md`](./docs/TESTING.md).
 
-## Production (Ubuntu) — summary
+## Production (Ubuntu, 24/7)
 
-Set `CAMERA_SOURCE=linux` in `.env.local`, install `ffmpeg` + Tailscale, then
-enable the provided `systemd` services so everything runs 24/7 and auto-restarts.
-Full walkthrough lands in `docs/DEPLOY-UBUNTU.md` (Step 6).
+Pull the repo, set `CAMERA_SOURCE=linux`, install `ffmpeg` + Tailscale, then run
+`sudo bash deploy/systemd/install.sh` to enable the `systemd` services (auto-start
+on boot, restart on crash). Full step-by-step:
+[`docs/DEPLOY-UBUNTU.md`](./docs/DEPLOY-UBUNTU.md).
+
+## Docs
+- [`docs/CAMERA.md`](./docs/CAMERA.md) — the camera pipeline
+- [`docs/SECURITY.md`](./docs/SECURITY.md) — the two-layer security model
+- [`docs/DEPLOY-UBUNTU.md`](./docs/DEPLOY-UBUNTU.md) — production deploy
+- [`docs/TESTING.md`](./docs/TESTING.md) — Mac + Android testing
 
 ## Roadmap
 
