@@ -66,3 +66,9 @@ your phone (with Tailscale) at `http://<machine-name>:3000`.
 
 This project is completely independent of `sandeepp.in`, Vercel, and Render.
 It changes no DNS and opens no router ports.
+
+## License
+
+All Rights Reserved — viewable publicly for portfolio/reference purposes only.
+No copying, reuse, or redistribution without written permission. See
+[`LICENSE`](./LICENSE).
