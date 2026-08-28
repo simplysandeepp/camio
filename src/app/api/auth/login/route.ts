@@ -7,9 +7,15 @@ import {
   sessionMaxAge,
 } from "@/lib/auth";
 import { checkLoginRate, resetLoginRate } from "@/lib/rate-limit";
+import { getUsers, findUser } from "@/lib/users";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// A syntactically valid but unreachable hash, verified against unknown
+// usernames so login takes the same time whether or not the account exists
+// (prevents timing-based username enumeration).
+const DUMMY_HASH = `scrypt:${"0".repeat(32)}:${"0".repeat(128)}`;
 
 // Only trust proxy-supplied client IPs when explicitly running behind a
 // trusted reverse proxy — otherwise X-Forwarded-For is attacker-controlled.
@@ -44,24 +50,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const expectedUser = process.env.CAMIO_USER ?? "admin";
-  const storedHash = process.env.CAMIO_PASSWORD_HASH;
   const sessionSecret = process.env.SESSION_SECRET;
 
   // Server misconfiguration: log the specifics, return a generic message so we
   // don't disclose config state to unauthenticated callers.
-  if (!storedHash || !sessionSecret || sessionSecret.length < 16) {
+  if (getUsers().length === 0 || !sessionSecret || sessionSecret.length < 16) {
     console.error(
       "[camio] auth not configured:",
-      !storedHash ? "CAMIO_PASSWORD_HASH missing" : "SESSION_SECRET missing/short",
+      getUsers().length === 0 ? "no users configured" : "SESSION_SECRET missing/short",
       "— run `npm run auth:setup`"
     );
     return NextResponse.json({ error: "Server error." }, { status: 500 });
   }
 
-  const userOk = username === expectedUser;
-  const passOk = verifyPassword(password, storedHash);
-  if (!userOk || !passOk) {
+  const user = findUser(username);
+  const passOk = verifyPassword(password, user?.hash ?? DUMMY_HASH);
+  if (!user || !passOk) {
     return NextResponse.json(
       { error: "Incorrect username or password." },
       { status: 401 }
@@ -70,7 +74,7 @@ export async function POST(req: NextRequest) {
 
   let token: string;
   try {
-    token = await createSessionToken(expectedUser);
+    token = await createSessionToken(user.username);
   } catch (err) {
     console.error("[camio] failed to create session token:", err);
     return NextResponse.json({ error: "Server error." }, { status: 500 });

@@ -13,6 +13,7 @@ next-env.d.ts
 .env
 .env.local
 .env*.local
+users.json
 
 # camera / media server binaries & runtime artifacts (all downloaded)
 /bin/
