@@ -18,7 +18,7 @@ export interface StreamUrls {
 export function streamUrls(): StreamUrls {
   const name = config.streamName;
   return {
-    whep: `/api/stream/whep`,
+    whep: "/api/stream/whep",
     hls: `/api/stream/hls/${name}/index.m3u8`,
   };
 }

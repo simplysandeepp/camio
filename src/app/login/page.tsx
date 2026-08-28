@@ -50,7 +50,6 @@ function LoginForm() {
         <label className="field">
           <span>Username</span>
           <input
-            autoFocus
             autoComplete="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
