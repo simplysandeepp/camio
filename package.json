@@ -1,6 +1,6 @@
 {
   "name": "camio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "UNLICENSED",
   "description": "Self-hosted multi-camera, multi-user security camera app — Next.js + MediaMTX + ffmpeg, WebRTC/HLS streaming behind auth, deployed over Tailscale.",
