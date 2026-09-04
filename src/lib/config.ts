@@ -58,8 +58,8 @@ function resolveCameras(defaults: CameraDefaults): Camera[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
-  } catch {
-    console.error("[camio] CAMERAS is not valid JSON; using a single default camera.");
+  } catch (err: any) {
+    console.error(`[camio] CAMERAS is not valid JSON (${err.message}); using a single default camera.`);
     return singleDefaultCamera(defaults);
   }
   if (!Array.isArray(parsed) || parsed.length === 0) {

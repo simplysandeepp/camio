@@ -30,8 +30,8 @@ function parseUsers(raw: string, source: string): CamioUser[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
-  } catch {
-    console.error(`[camio] ${source} is not valid JSON; ignoring it.`);
+  } catch (err: any) {
+    console.error(`[camio] ${source} is not valid JSON (${err.message}); ignoring it.`);
     return [];
   }
   if (!Array.isArray(parsed)) {
