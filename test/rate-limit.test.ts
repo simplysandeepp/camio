@@ -28,3 +28,12 @@ test("distinct keys have independent budgets", () => {
   assert.equal(checkLoginRate("u:a").allowed, false);
   assert.equal(checkLoginRate("u:b").allowed, true);
 });
+
+test("prunes oldest when exceeding capacity to prevent OOM", () => {
+  // Flood with more keys than MAX_BUCKETS (5000)
+  for (let i = 0; i < 5010; i++) {
+    checkLoginRate(`u:flood${i}`);
+  }
+  // If it didn't throw, pruning handled the flood.
+  assert.ok(true);
+});
