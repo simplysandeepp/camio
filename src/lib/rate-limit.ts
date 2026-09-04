@@ -23,8 +23,10 @@ function prune(now: number): void {
   }
   if (buckets.size > MAX_BUCKETS) {
     // Drop the buckets closest to expiring first.
+    // Drop an extra 10% to prevent rapid resorting if under sustained attack.
     const sorted = [...buckets.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt);
-    for (let i = 0; i < sorted.length - MAX_BUCKETS; i++) {
+    const targetSize = Math.floor(MAX_BUCKETS * 0.9);
+    for (let i = 0; i < sorted.length - targetSize; i++) {
       buckets.delete(sorted[i][0]);
     }
   }
