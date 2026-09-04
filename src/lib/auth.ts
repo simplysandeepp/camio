@@ -18,6 +18,7 @@ export const SESSION_COOKIE = "camio_session";
 
 function sessionTtlSeconds(): number {
   const hours = Number(process.env.SESSION_TTL_HOURS ?? "168"); // 7 days
+  if (Number.isNaN(hours)) return 168 * 3600;
   return Math.max(1, hours) * 3600;
 }
 
