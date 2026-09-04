@@ -123,10 +123,12 @@ export function getCamera(id: string): Camera | undefined {
  *
  * Returned as an argv array (no shell quoting headaches).
  */
-export function ffmpegInputArgs(): string[] {
-  const { device, resolution, fps } = config;
+export function ffmpegInputArgs(
+  camConfig: { source: CameraSource; device: string; resolution: string; fps: string } = config
+): string[] {
+  const { device, resolution, fps } = camConfig;
 
-  if (config.source === "linux") {
+  if (camConfig.source === "linux") {
     // Video4Linux2 — the standard Linux webcam interface (/dev/videoN).
     return [
       "-f", "v4l2",
