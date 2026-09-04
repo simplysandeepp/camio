@@ -29,7 +29,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const loginUrl = new URL("/login", req.url);
-  loginUrl.searchParams.set("next", pathname);
+  loginUrl.searchParams.set("next", pathname + req.nextUrl.search);
   return NextResponse.redirect(loginUrl);
 }
 
