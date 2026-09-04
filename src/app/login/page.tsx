@@ -50,7 +50,10 @@ function LoginForm() {
         <label className="field">
           <span>Username</span>
           <input
+            type="text"
             autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
