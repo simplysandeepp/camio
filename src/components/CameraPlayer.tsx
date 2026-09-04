@@ -47,13 +47,15 @@ export default function CameraPlayer({ whep, hls }: Props) {
       // Safari / iOS can play HLS natively.
       if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = hls;
-        try {
-          await video.play();
-          if (!cancelled) setState("hls");
-          return;
-        } catch {
-          /* fall through to hls.js */
-        }
+        video.play().catch((err: any) => {
+          // If autoplay is blocked (e.g. low power mode on iOS), we still want
+          // to stay in the native HLS state so the user can manually press play.
+          if (err.name !== "NotAllowedError" && err.name !== "AbortError") {
+            console.warn("Native HLS playback error:", err);
+          }
+        });
+        if (!cancelled) setState("hls");
+        return;
       }
 
       const { default: Hls } = await import("hls.js");

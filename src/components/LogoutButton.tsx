@@ -9,9 +9,16 @@ export default function LogoutButton() {
 
   async function logout() {
     setBusy(true);
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.replace("/login");
-    router.refresh();
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.replace("/login");
+      router.refresh();
+    } catch {
+      // If network fails, they might still be logged in locally/server,
+      // but let them retry instead of locking the button.
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
